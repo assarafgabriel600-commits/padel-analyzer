@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: padel-analyzer-backend
+    runtime: node
+    region: frankfurt
+    plan: free
+    rootDir: .
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+    disk:
+      name: padel-db
+      mountPath: /var/data
+      sizeGB: 1

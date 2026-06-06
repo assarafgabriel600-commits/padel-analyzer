@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(node -e \"const Anthropic = require\\('@anthropic-ai/sdk'\\); console.log\\('SDK version:', require\\('./node_modules/@anthropic-ai/sdk/package.json'\\).version\\)\")",
+      "Bash(npx kill-port *)",
+      "Bash(npx vercel *)",
+      "Bash(git --version)",
+      "Bash(curl --version)",
+      "Bash(gh --version)",
+      "Bash(curl --silent \"https://gitlab.com/api/v4/projects\" -o /dev/null -w \"%{http_code}\")",
+      "Bash(npm run *)",
+      "Bash(git config *)",
+      "PowerShell(git config --global user.name 2>&1; git config --global user.email 2>&1; Get-Content \"$env:USERPROFILE\\\\.gitconfig\" -ErrorAction SilentlyContinue | head -10)",
+      "PowerShell(git config --global user.name)",
+      "PowerShell(git config --global user.email)"
+    ]
+  }
+}
