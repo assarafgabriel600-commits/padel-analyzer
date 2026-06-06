@@ -25,16 +25,30 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Servir les frames extraites des vidéos
-const framesDir = process.env.NODE_ENV === 'production'
-  ? '/var/data/frames'
-  : path.join(__dirname, 'uploads/frames');
-app.use('/frames', express.static(framesDir));
+// Servir les frames extraites des vidéos (même dossier dev et prod)
+app.use('/frames', express.static(path.join(__dirname, 'uploads/frames')));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/matches', require('./routes/matches'));
 app.use('/api/reports', require('./routes/reports'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.NODE_ENV }));
+
+// Debug : vérifier ffmpeg + dossier frames
+app.get('/api/debug/ffmpeg', (req, res) => {
+  const { execSync } = require('child_process');
+  const framesDir = path.join(__dirname, 'uploads/frames');
+  const result = { framesDir, framesDirExists: require('fs').existsSync(framesDir), ffmpeg: null, error: null };
+  const candidates = ['ffmpeg', '/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg'];
+  for (const cmd of candidates) {
+    try {
+      const v = execSync(`${cmd} -version`, { timeout: 5000, stdio: 'pipe' }).toString().split('\n')[0];
+      result.ffmpeg = `${cmd} → ${v}`;
+      break;
+    } catch {}
+  }
+  if (!result.ffmpeg) result.error = 'ffmpeg introuvable';
+  res.json(result);
+});
 
 // Gestionnaire d'erreurs global
 app.use((err, req, res, next) => {

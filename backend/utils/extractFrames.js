@@ -2,10 +2,38 @@ const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-// Dossier de stockage des frames
-const FRAMES_DIR = process.env.NODE_ENV === 'production'
-  ? '/var/data/frames'
-  : path.join(__dirname, '../uploads/frames');
+// Dossier de stockage des frames — toujours dans uploads/frames (dev et prod)
+// /var/data n'existe que si un disque persistant Render est configuré
+const FRAMES_DIR = path.join(__dirname, '../uploads/frames');
+
+// Chercher ffmpeg dans les chemins courants Linux/Render
+function findFfmpeg() {
+  const candidates = [
+    'ffmpeg',
+    '/usr/bin/ffmpeg',
+    '/usr/local/bin/ffmpeg',
+    '/opt/render/project/src/node_modules/.bin/ffmpeg',
+  ];
+  for (const cmd of candidates) {
+    try {
+      execSync(`${cmd} -version`, { timeout: 5000, stdio: 'pipe' });
+      return cmd;
+    } catch {}
+  }
+  return null;
+}
+
+let FFMPEG_PATH = null;
+let FFPROBE_PATH = null;
+
+function initFfmpeg() {
+  if (FFMPEG_PATH !== null) return FFMPEG_PATH;
+  FFMPEG_PATH = findFfmpeg() || '';
+  // ffprobe suit le même chemin que ffmpeg
+  FFPROBE_PATH = FFMPEG_PATH ? FFMPEG_PATH.replace('ffmpeg', 'ffprobe') : '';
+  console.log(`extractFrames: ffmpeg=${FFMPEG_PATH || 'NON TROUVÉ'}`);
+  return FFMPEG_PATH;
+}
 
 function ensureDir() {
   if (!fs.existsSync(FRAMES_DIR)) {
@@ -40,6 +68,12 @@ async function extractPlayerFrame(videoPath, matchId, playerNum) {
     return { playerFrame: null, fullFrame: null };
   }
 
+  const ffmpeg = initFfmpeg();
+  if (!ffmpeg) {
+    console.warn('extractFrames: ffmpeg introuvable sur ce serveur');
+    return { playerFrame: null, fullFrame: null };
+  }
+
   ensureDir();
 
   const playerFrameFile = path.join(FRAMES_DIR, `${matchId}_player${playerNum}.jpg`);
@@ -47,31 +81,31 @@ async function extractPlayerFrame(videoPath, matchId, playerNum) {
 
   try {
     // 1. Récupérer la durée de la vidéo
-    let seekTime = 5; // fallback : 5 secondes
+    let seekTime = 5;
     try {
+      const ffprobe = FFPROBE_PATH || ffmpeg.replace('ffmpeg', 'ffprobe');
       const dur = execSync(
-        `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${videoPath}"`,
+        `"${ffprobe}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${videoPath}"`,
         { timeout: 15000, stdio: ['pipe', 'pipe', 'pipe'] }
       ).toString().trim();
       const duration = parseFloat(dur);
       if (!isNaN(duration) && duration > 2) {
-        // Prendre un instant à 30 % de la vidéo (action en cours)
         seekTime = Math.max(1, Math.min(duration * 0.30, duration - 1)).toFixed(2);
       }
     } catch (e) {
-      console.warn('ffprobe non disponible ou erreur :', e.message);
+      console.warn('ffprobe erreur (fallback 5s) :', e.message);
     }
 
     // 2. Extraire le frame complet
     execSync(
-      `ffmpeg -ss ${seekTime} -i "${videoPath}" -vframes 1 -q:v 2 "${fullFrameFile}" -y`,
+      `"${ffmpeg}" -ss ${seekTime} -i "${videoPath}" -vframes 1 -q:v 2 "${fullFrameFile}" -y`,
       { timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
 
-    // 3. Extraire le frame croppé + redimensionné sur le joueur (max 480px de large)
+    // 3. Extraire le frame croppé sur le joueur (max 480px de large)
     const crop = getPlayerCrop(playerNum);
     execSync(
-      `ffmpeg -ss ${seekTime} -i "${videoPath}" -vframes 1 -vf "${crop},scale=480:-1" -q:v 3 "${playerFrameFile}" -y`,
+      `"${ffmpeg}" -ss ${seekTime} -i "${videoPath}" -vframes 1 -vf "${crop},scale=480:-1" -q:v 3 "${playerFrameFile}" -y`,
       { timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
 
@@ -79,7 +113,7 @@ async function extractPlayerFrame(videoPath, matchId, playerNum) {
       playerFrame: fs.existsSync(playerFrameFile) ? `${matchId}_player${playerNum}.jpg` : null,
       fullFrame:   fs.existsSync(fullFrameFile)   ? `${matchId}_full.jpg`               : null,
     };
-    console.log(`extractFrames: OK → ${result.playerFrame}, ${result.fullFrame}`);
+    console.log(`extractFrames: OK → ${result.playerFrame} | ${result.fullFrame}`);
     return result;
 
   } catch (err) {
