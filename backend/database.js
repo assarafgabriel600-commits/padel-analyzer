@@ -116,6 +116,11 @@ async function initDB() {
   `);
   dbInstance._save();
 
+  // Migrations : ajouter colonnes frames si elles n'existent pas encore
+  try { dbInstance._db.run('ALTER TABLE matches ADD COLUMN player_frame TEXT'); } catch {}
+  try { dbInstance._db.run('ALTER TABLE matches ADD COLUMN full_frame TEXT'); } catch {}
+  dbInstance._save();
+
   console.log('DB ready ✅');
   return dbInstance;
 }

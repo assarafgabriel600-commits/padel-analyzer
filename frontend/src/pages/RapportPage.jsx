@@ -61,6 +61,59 @@ function DetailSection({ label, content }) {
   );
 }
 
+// URL de base du backend (sans /api) pour accéder aux frames
+const BACKEND_BASE = process.env.REACT_APP_API_URL || '';
+
+function PlayerFrame({ filename, playerNum, fullFrame }) {
+  const [imgError, setImgError] = useState(false);
+  const [showFull, setShowFull] = useState(false);
+
+  if (!filename && !fullFrame) return null;
+
+  const src = showFull
+    ? `${BACKEND_BASE}/frames/${fullFrame}`
+    : `${BACKEND_BASE}/frames/${filename || fullFrame}`;
+
+  if (imgError) return null;
+
+  return (
+    <div className="bg-glass-light rounded-2xl p-6 neon-border mb-4">
+      <h3 className="text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+        <span>📸</span>
+        <span style={{ color: '#00d4ff' }}>Capture — Joueur {playerNum} analysé</span>
+      </h3>
+
+      <div className="relative group overflow-hidden rounded-xl border border-white/10"
+        style={{ background: 'rgba(0,0,0,0.3)' }}>
+        <img
+          src={src}
+          alt={`Capture joueur ${playerNum}`}
+          className="w-full object-cover rounded-xl"
+          style={{ maxHeight: '320px', objectPosition: 'center' }}
+          onError={() => setImgError(true)}
+        />
+        {/* Badge joueur */}
+        <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-black text-dark-900"
+          style={{ background: 'linear-gradient(135deg, #00d4ff, #00ff88)' }}>
+          Joueur {playerNum}
+        </div>
+        {/* Bouton bascule full / crop */}
+        {filename && fullFrame && (
+          <button
+            onClick={() => setShowFull(v => !v)}
+            className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-semibold border border-white/20 text-white no-print"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}>
+            {showFull ? '🔍 Vue joueur' : '🎥 Vue terrain'}
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-slate-500 mt-2 text-center">
+        Frame extrait automatiquement de la vidéo · zone du joueur {playerNum}
+      </p>
+    </div>
+  );
+}
+
 export default function RapportPage() {
   const { id } = useParams();
   const [report, setReport] = useState(null);
@@ -174,6 +227,15 @@ export default function RapportPage() {
               </div>
             </div>
           </div>
+
+          {/* Capture du joueur extraite de la vidéo */}
+          {(report.player_frame || report.full_frame) && (
+            <PlayerFrame
+              filename={report.player_frame}
+              fullFrame={report.full_frame}
+              playerNum={report.analyzed_player}
+            />
+          )}
 
           {/* Summary */}
           {report.summary && (

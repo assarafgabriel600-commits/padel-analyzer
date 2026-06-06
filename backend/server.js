@@ -25,6 +25,12 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Servir les frames extraites des vidéos
+const framesDir = process.env.NODE_ENV === 'production'
+  ? '/var/data/frames'
+  : path.join(__dirname, 'uploads/frames');
+app.use('/frames', express.static(framesDir));
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/matches', require('./routes/matches'));
 app.use('/api/reports', require('./routes/reports'));

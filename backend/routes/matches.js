@@ -6,6 +6,7 @@ const { getDB } = require('../database');
 const auth = require('../middleware/auth');
 const Anthropic = require('@anthropic-ai/sdk');
 const fs = require('fs');
+const { extractPlayerFrame } = require('../utils/extractFrames');
 
 const router = express.Router();
 
@@ -71,6 +72,18 @@ router.post('/', auth, upload.single('video'), async (req, res) => {
 
   // Réponse immédiate, analyse en arrière-plan
   res.json({ matchId, status: 'analyzing' });
+
+  // Extraire les frames de la vidéo en parallèle avec l'analyse
+  const framePromise = extractPlayerFrame(videoPath, matchId, analyzed_player || 1)
+    .then(({ playerFrame, fullFrame }) => {
+      if (playerFrame || fullFrame) {
+        getDB().prepare(
+          'UPDATE matches SET player_frame = ?, full_frame = ? WHERE id = ?'
+        ).run(playerFrame || null, fullFrame || null, matchId);
+        console.log(`Frames stockées pour le match ${matchId}`);
+      }
+    })
+    .catch(err => console.error('Erreur extraction frames:', err));
 
   analyzeMatch(matchId, req.user.id, { description, opponent, score, date, surface, analyzed_player, videoPath })
     .catch(err => {

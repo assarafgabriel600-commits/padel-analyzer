@@ -20,7 +20,8 @@ router.get('/', auth, (req, res) => {
 router.get('/match/:matchId', auth, (req, res) => {
   const db = getDB();
   const report = db.prepare(`
-    SELECT r.*, m.title, m.opponent, m.score, m.date, m.surface, m.analyzed_player, m.description
+    SELECT r.*, m.title, m.opponent, m.score, m.date, m.surface,
+           m.analyzed_player, m.description, m.player_frame, m.full_frame
     FROM reports r
     JOIN matches m ON m.id = r.match_id
     WHERE r.match_id = ? AND r.user_id = ?
@@ -38,7 +39,8 @@ router.get('/match/:matchId', auth, (req, res) => {
 router.get('/:id', auth, (req, res) => {
   const db = getDB();
   const report = db.prepare(`
-    SELECT r.*, m.title, m.opponent, m.score, m.date, m.surface, m.analyzed_player, m.description
+    SELECT r.*, m.title, m.opponent, m.score, m.date, m.surface,
+           m.analyzed_player, m.description, m.player_frame, m.full_frame
     FROM reports r
     JOIN matches m ON m.id = r.match_id
     WHERE r.id = ? AND r.user_id = ?
