@@ -1,0 +1,21 @@
+REM BadUSB Script - Flipper Zero
+REM Action : Ouvre YouTube en plein écran sur Windows
+REM Auteur  : Flipper Zero BadUSB
+REM Syntaxe : DuckyScript (compatible Flipper Zero)
+
+DELAY 1000
+
+REM Ouvre la boite de dialogue Exécuter (Win + R)
+GUI r
+DELAY 600
+
+REM Tape l'URL YouTube
+STRING https://www.youtube.com
+DELAY 200
+ENTER
+
+REM Attend le chargement de la page (3 secondes)
+DELAY 3000
+
+REM Met la page en plein écran avec F11
+F11
