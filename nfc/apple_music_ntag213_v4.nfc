@@ -1,0 +1,65 @@
+Filetype: Flipper NFC device
+Version: 4
+# Device type can be ISO14443-3A, ISO14443-3B, ISO14443-4A, ISO14443-4B, ISO14443-3T, ISO14443-4T
+Device type: NTAG/MF Ultralight
+# UID is 7 bytes
+UID: 04 AB CD EF 12 34 56
+ATQA: 00 44
+SAK: 00
+# Mifare Ultralight specific data
+Mifare Ultralight type: NTAG213
+Signature: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+Mifare version: 00 04 04 02 01 00 0F 03
+Counter 0: 0
+Tearing 0: 00
+Counter 1: 0
+Tearing 1: 00
+Counter 2: 0
+Tearing 2: 00
+Pages total: 45
+Pages read: 45
+Page 0: 04 AB CD EA
+Page 1: EF 12 34 56
+Page 2: 9F 48 00 00
+Page 3: E1 10 12 00
+Page 4: 03 42 D1 01
+Page 5: 3E 55 04 6D
+Page 6: 75 73 69 63
+Page 7: 2E 61 70 70
+Page 8: 6C 65 2E 63
+Page 9: 6F 6D 2F 66
+Page 10: 72 2F 61 6C
+Page 11: 62 75 6D 2F
+Page 12: 73 75 63 65
+Page 13: 2D 6D 61 2D
+Page 14: 62 69 74 65
+Page 15: 2F 31 35 30
+Page 16: 39 30 31 37
+Page 17: 34 34 36 3F
+Page 18: 69 3D 31 35
+Page 19: 30 39 30 31
+Page 20: 37 34 36 31
+Page 21: FE 00 00 00
+Page 22: 00 00 00 00
+Page 23: 00 00 00 00
+Page 24: 00 00 00 00
+Page 25: 00 00 00 00
+Page 26: 00 00 00 00
+Page 27: 00 00 00 00
+Page 28: 00 00 00 00
+Page 29: 00 00 00 00
+Page 30: 00 00 00 00
+Page 31: 00 00 00 00
+Page 32: 00 00 00 00
+Page 33: 00 00 00 00
+Page 34: 00 00 00 00
+Page 35: 00 00 00 00
+Page 36: 00 00 00 00
+Page 37: 00 00 00 00
+Page 38: 00 00 00 00
+Page 39: 00 00 00 00
+Page 40: 00 00 00 BD
+Page 41: 04 00 00 FF
+Page 42: 00 05 00 00
+Page 43: 00 00 00 00
+Page 44: 00 00 00 00
