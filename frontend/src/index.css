@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-brev-cream text-brev-dark antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    overscroll-behavior: none;
+  }
+
+  /* Ensure full height on mobile */
+  html, body, #root {
+    height: 100%;
+    min-height: 100dvh;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply w-full py-3.5 px-6 bg-brev-blue text-white font-semibold rounded-xl
+           hover:bg-brev-indigo active:scale-[0.98] transition-all duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl
+           text-brev-dark placeholder-gray-400 focus:outline-none focus:ring-2
+           focus:ring-brev-blue/30 focus:border-brev-blue transition-all duration-150;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-5;
+  }
+}
+
+/* Dot typing animation delay utilities */
+.delay-150 { animation-delay: 0.15s; }
+.delay-300 { animation-delay: 0.30s; }
+
+/* Smooth scroll on chat */
+.chat-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar on mobile but keep scrolling */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
