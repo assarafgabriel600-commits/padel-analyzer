@@ -1,22 +1,79 @@
 services:
   - type: web
-    name: padel-analyzer-backend
-    runtime: node
+    name: brev-app-api
+    runtime: docker
     region: frankfurt
-    plan: free
-    rootDir: .
-    buildCommand: npm install
-    startCommand: npm start
+    plan: starter
+    rootDir: backend
+    dockerfilePath: backend/Dockerfile
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: JWT_SECRET
-        generateValue: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: FRONTEND_URL
+      - key: REDIS_URL
+        fromService:
+          name: brev-app-redis
+          type: redis
+          property: connectionString
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: APP_ENV
+        value: production
+    disk:
+      name: pdf-cache
+      mountPath: /tmp/brev_pdfs
+      sizeGB: 5
+
+  - type: worker
+    name: brev-app-worker
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    rootDir: backend
+    dockerfilePath: backend/Dockerfile
+    dockerCommand: celery -A workers.tasks.celery_app worker --loglevel=info --concurrency=2
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: brev-app-redis
+          type: redis
+          property: connectionString
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
         sync: false
     disk:
-      name: padel-db
-      mountPath: /var/data
-      sizeGB: 1
+      name: pdf-cache-worker
+      mountPath: /tmp/brev_pdfs
+      sizeGB: 5
+
+  - type: redis
+    name: brev-app-redis
+    region: frankfurt
+    plan: starter
+    maxmemoryPolicy: noeviction

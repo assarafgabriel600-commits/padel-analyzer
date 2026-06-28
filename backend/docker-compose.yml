@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      - redis
+    volumes:
+      - pdf_cache:/tmp/brev_pdfs
+      - image_cache:/tmp/brev_images
+
+  worker:
+    build: .
+    command: celery -A workers.tasks.celery_app worker --loglevel=info --concurrency=2
+    env_file: .env
+    depends_on:
+      - redis
+    volumes:
+      - pdf_cache:/tmp/brev_pdfs
+      - image_cache:/tmp/brev_images
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  pdf_cache:
+  image_cache:

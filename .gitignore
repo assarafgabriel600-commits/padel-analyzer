@@ -1,28 +1,44 @@
-# Dependencies
-node_modules/
-**/node_modules/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
 
 # Environment
 .env
 **/.env
 backend/.env
 
-# Database
-*.db
-**/uploads/
+# iOS / Xcode
+ios/BrevApp.xcodeproj/
+ios/BrevApp.xcworkspace/
+ios/**/*.xcodeproj/
+ios/**/*.xcworkspace/
+ios/**/xcuserdata/
+ios/**/DerivedData/
+ios/**/*.xccheckout
+ios/**/*.xcscmblueprint
+ios/**/.build/
+*.ipa
 
-# Build
-frontend/build/
-frontend/.env.production
-
-# Tools
-_tools/
-deployment-urls.txt
+# PDFs / temp files
+/tmp/brev_pdfs/
+/tmp/brev_images/
+*.pdf
 
 # OS
 .DS_Store
 Thumbs.db
 
+# IDE
+.idea/
+.vscode/
+*.swp
+
 # Logs
-npm-debug.log*
 *.log
+npm-debug.log*

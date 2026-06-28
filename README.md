@@ -1,206 +1,147 @@
-# 🎾 Padel AI — Analyseur de matchs
+# BrevApp — Générateur de sujets de Brevet sur-mesure
 
-Application web d'analyse de matchs de padel par intelligence artificielle (Claude AI).
-
-**Stack :** React + Tailwind CSS · Node.js + Express · SQLite (sql.js) · Anthropic Claude
-
----
-
-## 🚀 Déploiement en production
-
-### Prérequis
-- Compte [GitHub](https://github.com) — pour héberger le code
-- Compte [Render](https://render.com) — backend gratuit
-- Compte [Vercel](https://vercel.com) — frontend gratuit
-- Clé API [Anthropic](https://console.anthropic.com)
+Application iOS pour les élèves de 3ème préparant le Brevet des collèges.
+L'élève décrit en langage naturel ce qu'il veut réviser ; l'app génère un sujet PDF personnalisé à partir de vraies annales officielles du DNB.
 
 ---
 
-### ÉTAPE 1 — Pousser le code sur GitHub
-
-1. Crée un nouveau dépôt sur [github.com/new](https://github.com/new)
-   - Nom : `padel-analyzer`
-   - Visibilité : **Private** (recommandé car contient config)
-
-2. Dans le dossier `padel analyzer/`, ouvre un terminal et exécute :
-
-```bash
-git init
-git add .
-git commit -m "Initial commit — Padel AI"
-git remote add origin https://github.com/TON_USERNAME/padel-analyzer.git
-git push -u origin main
-```
-
----
-
-### ÉTAPE 2 — Déployer le Backend sur Render
-
-1. Va sur [dashboard.render.com](https://dashboard.render.com) → **New → Web Service**
-
-2. Connecte ton dépôt GitHub `padel-analyzer`
-
-3. Configure le service :
-   | Champ | Valeur |
-   |-------|--------|
-   | **Name** | `padel-analyzer-backend` |
-   | **Region** | `Frankfurt (EU)` |
-   | **Branch** | `main` |
-   | **Root Directory** | `backend` |
-   | **Runtime** | `Node` |
-   | **Build Command** | `npm install` |
-   | **Start Command** | `npm start` |
-   | **Plan** | `Free` |
-
-4. Dans **Advanced → Add Disk** :
-   | Champ | Valeur |
-   |-------|--------|
-   | **Name** | `padel-db` |
-   | **Mount Path** | `/var/data` |
-   | **Size** | `1 GB` |
-
-   > ⚠️ Le disque persistant nécessite le plan **Starter ($7/mois)**. Sans disque, les données sont perdues à chaque redémarrage. Alternative gratuite : migrer vers PostgreSQL (Render offre une DB PostgreSQL gratuite).
-
-5. Dans **Environment Variables**, ajoute :
-   | Clé | Valeur |
-   |-----|--------|
-   | `NODE_ENV` | `production` |
-   | `ANTHROPIC_API_KEY` | `sk-ant-...ta-clé...` |
-   | `JWT_SECRET` | *(cliquer sur "Generate")* |
-   | `FRONTEND_URL` | *(à remplir à l'étape 3)* |
-
-6. Clique **Create Web Service** et attends le déploiement (~3 min)
-
-7. **Copie l'URL** du service : `https://padel-analyzer-backend.onrender.com`
-
-8. Teste : ouvre `https://padel-analyzer-backend.onrender.com/api/health`
-   → Doit retourner `{"status":"ok","env":"production"}`
-
----
-
-### ÉTAPE 3 — Déployer le Frontend sur Vercel
-
-1. Va sur [vercel.com](https://vercel.com) → **Add New → Project**
-
-2. Importe ton dépôt GitHub `padel-analyzer`
-
-3. Configure le projet :
-   | Champ | Valeur |
-   |-------|--------|
-   | **Framework Preset** | `Create React App` |
-   | **Root Directory** | `frontend` |
-   | **Build Command** | `npm run build` |
-   | **Output Directory** | `build` |
-
-4. Dans **Environment Variables**, ajoute :
-   | Clé | Valeur |
-   |-----|--------|
-   | `REACT_APP_API_URL` | `https://padel-analyzer-backend.onrender.com` |
-
-5. Clique **Deploy** et attends (~2 min)
-
-6. **Copie l'URL** Vercel : `https://padel-analyzer.vercel.app`
-
----
-
-### ÉTAPE 4 — Relier Backend et Frontend (CORS)
-
-1. Retourne sur Render → ton service → **Environment**
-
-2. Mets à jour la variable `FRONTEND_URL` avec l'URL Vercel :
-   ```
-   FRONTEND_URL = https://padel-analyzer.vercel.app
-   ```
-
-3. Render redémarre automatiquement le service
-
-4. ✅ L'application est en ligne !
-
----
-
-## 💻 Développement local
-
-### Prérequis
-- [Node.js 18+](https://nodejs.org)
-
-### Installation
-
-```bash
-# Backend
-cd backend
-npm install
-# Copier et configurer le .env
-cp .env.example .env
-# Éditer .env : ajouter ANTHROPIC_API_KEY
-
-# Frontend (autre terminal)
-cd frontend
-npm install
-```
-
-### Lancement
-
-```bash
-# Terminal 1 — Backend (port 5000)
-cd backend
-npm run dev
-
-# Terminal 2 — Frontend (port 3000)
-cd frontend
-npm start
-```
-
-→ Application sur **http://localhost:3000**
-
-### Variables d'environnement (backend/.env)
-```env
-ANTHROPIC_API_KEY=sk-ant-...
-JWT_SECRET=une_chaine_secrete_longue_et_aleatoire
-PORT=5000
-```
-
----
-
-## 📁 Structure du projet
+## Architecture
 
 ```
-padel analyzer/
+┌─────────────────┐       ┌──────────────────────────────────────────┐
+│   App iOS       │◄─────►│ Backend FastAPI (Python)                 │
+│   SwiftUI       │  HTTPS│                                          │
+│                 │  SSE  │  /auth  → Supabase Auth                  │
+│   Auth          │       │  /chat  → Claude (streaming SSE)         │
+│   Chat          │       │  /subjects → CRUD sujets générés         │
+│   PDF Viewer    │       │  /pipeline → scraping + extraction        │
+└─────────────────┘       └──────────┬───────────────────────────────┘
+                                     │
+                    ┌────────────────┼────────────────┐
+                    ▼                ▼                ▼
+              Supabase          Celery Workers    Cloudflare R2
+              (PostgreSQL       (Playwright       (Stockage PDF)
+              + Auth)          scraper, PDF
+                               extraction,
+                               classification)
+```
+
+## Stack
+
+| Couche | Technologie |
+|--------|-------------|
+| App iOS | SwiftUI (iOS 17+) |
+| Backend | Python 3.12 / FastAPI |
+| Auth | Supabase (email + mot de passe) |
+| Base de données | Supabase PostgreSQL |
+| File de tâches | Celery + Redis |
+| Scraping | Playwright (headless Chromium) |
+| Extraction PDF | pdfplumber + PyMuPDF |
+| Classification | Claude API (claude-haiku) |
+| Chatbot | Claude API (claude-sonnet, streaming SSE) |
+| Génération PDF | PyMuPDF + ReportLab |
+| Stockage PDF | Cloudflare R2 (compatible S3) |
+| Hébergement backend | Render (Docker) |
+
+## Sources de données
+
+Uniquement des sites institutionnels officiels :
+
+| Source | URL | Classification |
+|--------|-----|----------------|
+| Strabon | histoire.ac-versailles.fr/spip.php?rubrique128 | Déjà par thème ✅ |
+| Eduscol | eduscol.education.gouv.fr/5202/ | Par Claude 🤖 |
+| Education.gouv.fr | education.gouv.fr/reussir-au-lycee/... | Par Claude 🤖 |
+
+## Structure du projet
+
+```
 ├── backend/
-│   ├── server.js           ← Point d'entrée Express
-│   ├── database.js         ← SQLite via sql.js + persistance fichier
-│   ├── routes/
-│   │   ├── auth.js         ← POST /api/auth/login|register
-│   │   ├── matches.js      ← POST /api/matches (upload + analyse IA)
-│   │   └── reports.js      ← GET /api/reports/:id
-│   ├── middleware/auth.js  ← Vérification JWT
-│   ├── render.yaml         ← Config déploiement Render
-│   └── .env.example
+│   ├── app/
+│   │   ├── main.py              # FastAPI app
+│   │   ├── config.py            # Settings (pydantic-settings)
+│   │   ├── database.py          # Supabase client
+│   │   ├── api/
+│   │   │   ├── auth.py          # /auth/register|login|logout|me
+│   │   │   ├── chat.py          # /chat/message (SSE streaming)
+│   │   │   └── subjects.py      # /subjects CRUD + /pipeline
+│   │   ├── services/
+│   │   │   ├── scraper.py       # Playwright scraper (Strabon + Eduscol)
+│   │   │   ├── extractor.py     # Segmentation PDF (pdfplumber + PyMuPDF)
+│   │   │   ├── classifier.py    # Classification Claude
+│   │   │   ├── generator.py     # Assemblage PDF final
+│   │   │   └── search.py        # Recherche exercices en base
+│   │   └── models/schemas.py    # Pydantic models
+│   ├── workers/tasks.py         # Celery tasks
+│   ├── migrations/001_schema.sql # Schéma Supabase
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   └── render.yaml              # Déploiement Render
 │
-└── frontend/
-    ├── src/
-    │   ├── pages/
-    │   │   ├── AuthPage.jsx      ← Connexion / Inscription
-    │   │   ├── DashboardPage.jsx ← Tableau de bord
-    │   │   ├── AnalysePage.jsx   ← Upload + formulaire analyse
-    │   │   └── RapportPage.jsx   ← Rapport complet + export PDF
-    │   └── context/AuthContext.jsx ← Auth + Axios global
-    ├── vercel.json             ← Config déploiement Vercel
-    └── .env.production.example
+└── ios/
+    ├── project.yml              # XcodeGen config
+    └── BrevApp/
+        ├── Models/              # User, ChatMessage, GeneratedSubject
+        ├── Services/            # APIService (SSE), AuthService (Keychain)
+        ├── ViewModels/          # AuthVM, ChatVM, SubjectsVM
+        └── Views/
+            ├── Auth/            # Login + Register
+            ├── Main/            # Tab bar, Home, Create, Account
+            ├── Chat/            # ChatView + MessageBubble + TypingIndicator
+            ├── PDF/             # PDFKit viewer + share
+            └── Components/      # Cards, Buttons, Fields, Colors
 ```
 
----
+## Démarrage rapide
 
-## ⚠️ Notes importantes
+### Backend
 
-### SQLite sur Render Free
-Le plan gratuit Render ne propose pas de disque persistant. Les données sont perdues à chaque redémarrage du service (environ toutes les 15 minutes d'inactivité).
+```bash
+cd backend
+cp .env.example .env
+# Remplir les variables (Supabase, Anthropic, S3...)
 
-**Solutions :**
-- Plan **Starter Render** ($7/mois) → active le disque `/var/data`
-- Migrer vers **PostgreSQL** (Render offre une DB PostgreSQL gratuite — demande si tu veux cette migration)
+# Dev avec Docker
+docker compose up
 
-### Performances Render Free
-Le backend "s'endort" après 15 min d'inactivité. La première requête prend ~30 secondes (cold start). C'est normal sur le plan gratuit.
+# Ou directement
+pip install -r requirements.txt
+playwright install chromium
+uvicorn app.main:app --reload
+```
 
-### Clé API Anthropic
-Ne jamais commiter la clé API dans le code. Elle doit toujours être définie comme variable d'environnement sur Render.
+### Base de données
+
+Dans le SQL Editor de Supabase, exécuter :
+```
+backend/migrations/001_schema.sql
+```
+
+### App iOS
+
+```bash
+cd ios
+brew install xcodegen
+xcodegen generate
+open BrevApp.xcodeproj
+# Cmd+R pour lancer sur simulateur
+```
+
+### Premier peuplement de la base
+
+```bash
+# Via l'API (une fois le backend démarré)
+curl -X POST http://localhost:8000/pipeline/scrape \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"source": "strabon", "limit": 50}'
+```
+
+## Déploiement production (Render)
+
+Le fichier `backend/render.yaml` configure automatiquement :
+- Service API (Docker)
+- Worker Celery (Docker)
+- Redis managé
+
+Pousser sur la branche principale après avoir configuré les variables d'environnement dans le dashboard Render.
